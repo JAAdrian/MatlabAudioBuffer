@@ -4,8 +4,7 @@
 % Date   :  20-Mar-2015 13:04:55
 % Updated:  <>
 
-% clear;
-clear classes;
+clear;
 close all;
 
 szFilename = 'Audio/speech_2chan.wav';
@@ -14,27 +13,31 @@ szFilename = 'Audio/speech_2chan.wav';
 % fs = 16e3;
 % vSignal = randn(round(9e-3*fs),1);
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 blocklen = 30e-3;
 overlap  = 0.5;
+hWin     = @(x) sqrt(hann(x,'periodic'));
 
 vIdxChannels = 1;
 % vIdxChannels = [1 2];
-
-hWin = @(x) sqrt(hann(x,'periodic'));
-
-% cAudioBuffer = AudioBuffer(vSignal,fs,blocklen,overlap);
-%  cAudioBuffer = AudioBuffer(vSignal,fs,blocklen,overlap,hWin);
-% cAudioBuffer = AudioBuffer(vSignal,fs);
-cAudioBuffer = AudioBuffer(szFilename,fs,blocklen,overlap,hWin);
-
-% cAudioBuffer.vIdxChans = vIdxChannels;
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
+cAudioBuffer = AudioBuffer(vSignal,fs);
+% cAudioBuffer = AudioBuffer(szFilename);
 
-blocklen  = cAudioBuffer.blocklen;
-numBlocks = cAudioBuffer.numBlocks;
+
+cAudioBuffer.BlocklenSec  = blocklen;
+cAudioBuffer.OverlapRatio = overlap;
+
+cAudioBuffer.IdxChannels = vIdxChannels;
+
+cAudioBuffer.WindowFunction = hWin;
+% cAudioBuffer.WindowFunction = 'hann';
 
 
+blocklen     = cAudioBuffer.Blocklen;
+numBlocks    = cAudioBuffer.NumBlocks;
 mBlockSignal = zeros(blocklen,length(vIdxChannels),numBlocks);
 for aaBlock = 1:numBlocks,
     tic;
