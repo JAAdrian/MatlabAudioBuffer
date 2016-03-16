@@ -8,56 +8,61 @@ clear;
 close all;
 
 szFilename = 'Audio/speech_2chan.wav';
-[vSignal,fs] = audioread(szFilename);
+[signal, sampleRate] = audioread(szFilename);
 
-% fs = 16e3;
-% vSignal = randn(round(9e-3*fs),1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-blocklen = 30e-3;
-overlap  = 0.5;
-hWin     = @(x) sqrt(hann(x,'periodic'));
+blocklenSec  = 30e-3;
+overlapRatio = 0.88;
+winfun = @(x) sqrt(hann(x, 'periodic'));
 
-vIdxChannels = 1;
-% vIdxChannels = [1 2];
+idxChannels = 1;
+% idxChannels = [1 2];
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-
-cAudioBuffer = AudioBuffer(vSignal,fs);
-% cAudioBuffer = AudioBuffer(szFilename);
-
-
-cAudioBuffer.BlocklengthSec = blocklen;
-cAudioBuffer.OverlapRatio   = overlap;
-
-cAudioBuffer.IdxChannels = vIdxChannels;
-
-cAudioBuffer.WindowFunction = hWin;
-% cAudioBuffer.WindowFunction = 'hann';
+% either call the class constructor with the signal vector and sample rate
+% or with the filename
+obj = AudioBuffer(signal, sampleRate);
+% obj = AudioBuffer(szFilename);
 
 
-blocklen     = cAudioBuffer.Blocklength;
-numBlocks    = cAudioBuffer.NumBlocks;
-mBlockSignal = zeros(blocklen,length(vIdxChannels),numBlocks);
+obj.BlockLengthSec = blocklenSec;
+obj.OverlapRatio   = overlapRatio;
+
+obj.IdxChannels = idxChannels;
+
+% either pass a function handle or a string of a function as the window
+% function
+obj.WindowFunction = winfun;
+% obj.WindowFunction = 'hamming';
+
+
+% do 'block processing'
+blocklenSec = obj.BlockSize;
+numBlocks   = obj.NumBlocks;
+blockSignal = zeros(blocklenSec, length(idxChannels), numBlocks);
 for aaBlock = 1:numBlocks,
     tic;
-    mBlockSignal(:,:,aaBlock) = cAudioBuffer.getBlock();
+    blockSignal(:,:,aaBlock) = getBlock(obj);
     toc;
     
     figure(10);
-    plot(mBlockSignal(:,:,aaBlock));
-    axis([1 size(mBlockSignal,1) -1 1]);
+    plot(blockSignal(:,:,aaBlock));
+    axis([1 size(blockSignal,1) -1 1]);
     drawnow;
 end
-% dummy = cAudioBuffer.getBlock();
 
-vReconstSignal = zeros(size(vSignal,1),length(vIdxChannels));
-for aaChan = 1:length(vIdxChannels),
-    vReconstSignal(:,aaChan) = cAudioBuffer.unbuffer(squeeze(mBlockSignal(:,aaChan,:)));
+% Test if pulling another block really returns a warning
+testdummy = obj.getBlock();
+
+% Reconstruct the original signal with WOLA
+reconstructedSignal = zeros(size(signal,1),length(idxChannels));
+for aaChan = 1:length(idxChannels),
+    reconstructedSignal(:,aaChan) = WOLA(obj, squeeze(blockSignal(:,aaChan,:)));
 end
     
 figure(11);
-plot([vSignal(:,vIdxChannels) vReconstSignal]);
+plot([signal(:,idxChannels) reconstructedSignal]);
 
 
 

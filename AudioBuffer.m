@@ -6,48 +6,53 @@ classdef AudioBuffer < handle
 % signal vector or a filename pointing to an audio file.
 % The essential method `getBlock` returns one signal block at a time
 % according to the desired parameters block length and overlap.
-% 
-% 
+%
+% The class has dependencies to the MATLAB Signal Processing Toolbox.
+%
+%
 % AudioBuffer Properties:
-%    SignalDimensions - Signal Dimensions
-%    numBlocks - Number of Signal Blocks
-%     Blocklength - Block Length in Samples
-%           fs - Sampling Frequency
-%  BlocklengthSec - Block Length in Seconds
-% overlapRatio - Ratio of Overlapping Samples
-%  szWindowFun - Name of the Window Function
-%    vIdxChans - Chosen Signal Channels
+%   SignalDimensions - Signal Dimensions
+%   NumBlocks        - Number of Signal Blocks
+%   BlockSize        - Block Length in Samples
+%   SampleRate       - Sampling Frequency in Hz
+%   BlockLengthSec   - Block Length in Seconds
+%   OverlapRatio     - Ratio of Overlapping Samples
+%   WindowFunction   - Name of the Window Function
+%   IdxChannels      - Chosen Signal Channels
 %
 % AudioBuffer Methods:
 %    getBlock - get a current block of audio data
-%    unbuffer - reconstruct the original signal via WOLA
-% 
-% 
+%    WOLA - reconstruct the original signal via WOLA method
+%
+%
 % Example:
 % =========================================================================
-%   obj = AudioBuffer(vSignal,fs,30e-3,0.5,@hann);
-% 
-%   numBlocks = obj.numBlocks;
-%   Blocklength  = obj.Blocklength;
-% 
-%   mSignalBlocks = zeros(Blocklength,numBlocks);
-%   for aaBlock = 1:numBlocks,
-%       mSignalBlocks(:,aaBlock) = obj.getBlock;
+%   obj = AudioBuffer(signal, sampleRate);
+%   obj.OverlapRatio = 0.5;
+%   obj.WindowFunction = @(x) hann(x, 'periodic');
+%
+%   numBlocks = obj.NumBlocks;
+%   blockSize = obj.BlockSize;
+%
+%   signalBlocks = zeros(blockSize, numBlocks);
+%   for iBlock = 1:numBlocks
+%       signalBlocks(:, iBlock) = obj.getBlock;
 %   end
-% 
-%   vReconstructedSig = obj.unbuffer(mSignalBlocks);
-% 
-%   norm(vSignal - vReconstructedSig)^2
-% 
+%
+%   reconstructedSignal = obj.WOLA(signalBlocks);
+%
+%   norm(signal - reconstructedSignal)^2
+%
 %   ans =
-% 
+%
 %     0.0021
 % =========================================================================
-% 
-% 
+%
+% See also: STR2FUNC, AUDIOREAD, AUDIOINFO
+%
 % Author:  J.-A. Adrian (JA) <jens-alrik.adrian AT jade-hs.de>
 % Date  :  20-Mar-2015 13:04:55
-% 
+%
 
 % Version: v0.1 initial release, 20-Mar-2015 (JA)
 %          v1.0 added input checks, improve documentation, 16-Mar-2016 (JA)
@@ -66,15 +71,15 @@ end
 
 properties (Access = private, Dependent)
     Overlap;
-    Frameshift;
+    FrameShift;
     LengthPaddedSignal;
     RemainingSamples;
 end
 
 properties (SetAccess = private)
-%Fs Sampling Frequency.
+%SampleRate Sampling Frequency in Hz
 %   Sampling rate which has been passed or read from the chosen audio file.
-    Fs;
+    SampleRate;
     
 %SignalDimensions Signal Dimensions.
 %   Signal Dimensions of the chosen signal vector/matrix or file, i.e.
@@ -88,22 +93,22 @@ properties (SetAccess = private, Dependent)
 %   default the last block will be padded with zeros if it lacks samples.
     NumBlocks;
     
-%Blocklength Block Length in Samples.
+%BlockSize Block Length in Samples.
 %   Block length in samples based on the chosen length in seconds and the
 %   sampling frequency.
-    Blocklength;
+    BlockSize;
 end
 
 properties
-%BlocklengthSec Block Length in Seconds.
+%BlockLengthSec Block Length in Seconds.
 %   Block length in seconds. The default is 30 ms as it is usual in speech
 %   processing.
-    BlocklengthSec  = 30e-3;
+    BlockLengthSec = 30e-3;
     
 %OverlapRatio Ratio of Overlapping Samples
 %   Overlap given as ratio re. to the block length. The default is 0,
 %   i.e. 0 * 100%, due to the default rectangular window.
-    OverlapRatio = 0.5;
+    OverlapRatio = 0;
     
 %WindowFunction Window Function Applied to the Signal Block
 %   The default is '@rectwin' in conjunction with OverlapRatio = 0. Thus,
@@ -127,48 +132,67 @@ end
 
 methods
     % constructor
-    function self = AudioBuffer(Source, fs)
-        % Constructor of the AudioBuffer Class.
-        % Usage:
-        %
-        %	self = AudioBuffer(Source,fs)
-        % 
-        % BlocklengthSec is optional (default: 30ms) and overlapRatio is
-        % optional (default: 0.5)
-        
-        if nargin,            
-            if isnumeric(Source),           % 'Source' is a data vector/matrix
-                self.Signal        = Source;
-                self.RetrievalFun = 'cutIntoBlocks';
+    function self = AudioBuffer(Source, SampleRate)
+    % Constructor of the AudioBuffer Class.
+    %
+    % Usage: obj = AudioBuffer(Source, SampleRate)
+    %
+    % Inputs:  ------------------
+    %       Source - Either a signal vector/matrix or a filename
+    %                pointing to an audio file
+    %       SampleRate - Sampling rate in Hz
+    %
+    % Outputs: ------------------
+    %       obj - AudioBuffer object
+    %
+          
+        if nargin,
+            if isnumeric(Source),        % 'Source' is a data vector/matrix
+                narginchk(2, 2);
                 
-                if nargin > 1 && ~isempty(fs),
-                    self.Fs = fs;
-                end
+                self.Signal       = Source;
+                self.RetrievalFun = 'DecomposeIntoBlocks';
+                self.SampleRate   = SampleRate;
                 
                 self.SignalDimensions = size(self.Signal);
+            elseif ischar(Source),           % 'Source' is a path to a file
+                narginchk(1, 1);
                 
-            elseif ischar(Source),          % 'Source' is a path to a file
                 self.Filename     = Source;
                 self.RetrievalFun = 'readFromAudioFile';
                 
-                stInfo = audioinfo(self.Filename);
-                self.Fs = stInfo.SampleRate;
+                stInfo          = audioinfo(self.Filename);
+                self.SampleRate = stInfo.SampleRate;
+                
                 self.SignalDimensions = [stInfo.TotalSamples, stInfo.NumChannels];
             else
                 error(['Source is not recognized!', ...
-                    'Pass a signal vector/matrix',...
+                    'Pass a signal vector/matrix', ...
                     'or a path to an audio file (e.g. C:/.../audio.wav)']);
             end
         end
         
+        % set block index to 1.
         initiateBlockIndex(self);
         
+        % initialize the IsFinished flag.
         self.IsFinished = false;
     end
     
     function [data] = getBlock(self)
-        % Essential method to optain a current block of the audio signal
+    % Essential method to optain a current block of the audio signal
+    %
+    % Usage: [data] = getBlock(obj)
+    %
+    % Inputs:  ------------------
+    %       obj - AudioBuffer object
+    %
+    % Outputs: ------------------
+    %       data - next signal block with desired size and following
+    %              desired overlap
+    %
         
+        % Stop and warn if the last block is already put out.
         if self.IsFinished,
             warning('The last data block has been returned. No more data left!');
             data = [];
@@ -177,42 +201,92 @@ methods
         
         
         % --------------------------------------------------------------- %
+        % Return data depending on whether the source is a signal
+        % vector/matrix or an audio file. Pad the last block with zeros if
+        % the number of remaining samples is smaller than the desired block
+        % size.
+        
         if self.ThisBlock(end) < self.SignalDimensions(1),
             data = self.(self.RetrievalFun)(self.ThisBlock);
-            data = data(:,self.IdxChannels);
+            data = data(:, self.IdxChannels);
         else
             data = self.(self.RetrievalFun)(self.ThisBlock(1):self.SignalDimensions(1));
-            data = [data(:, self.IdxChannels); zeros(self.RemainingSamples, length(self.IdxChannels))];
+            data = [
+                data(:, self.IdxChannels);
+                zeros(self.RemainingSamples, length(self.IdxChannels))
+                ];
             
+            % This was the last block.
             self.IsFinished = true;
         end
-        data = data .* (self.WindowFunction(self.Blocklength) * ones(1,length(self.IdxChannels)));
+        
+        % Apply window function to the current data vector/matrix and make
+        % sure the window has the correct dimensions if dealing with number
+        % of channels > 1.
+        data = data .* (self.WindowFunction(self.BlockSize) * ones(1,length(self.IdxChannels)));
         % --------------------------------------------------------------- %
         
-        self.ThisBlock = self.ThisBlock + self.Frameshift;
+        % increment the block indices.
+        self.ThisBlock = self.ThisBlock + self.FrameShift;
     end
     
-    function signalOut = unbuffer(self, signalBlocks)
-        [BlocklengthIn, numBlocksIn] = size(signalBlocks);
+    function [signalOut] = WOLA(self, signalBlocks)
+    % Reconstruct the decomposed signal using the weighted-overlap-add
+    % (WOLA) method using the parameters of the AudioBuffer object.
+    % This method is useful if the blocked data are altered outside the
+    % class and it is desired to reconstruct a signal vector. Only use
+    % single channel data with this function! For multichannel data
+    % call this function multiple times using the respective channel
+    % data.
+    %
+    % Usage: [signalOut] = WOLA(obj, signalBlocks)
+    %
+    % Inputs:  ------------------
+    %       obj          - AudioBuffer object
+    %       signalBlocks - Signal blocks matrix with dimensions
+    %                      BlockSize x NumBlocks
+    %
+    % Outputs: ------------------
+    %       signalOut - Reconstructed signal vector with the length of
+    %                   the original signal in samples
+    %
         
-        if numBlocksIn < self.NumBlocks || BlocklengthIn < self.Blocklength,
+        validateattributes(signalBlocks, {'numeric'}, ...
+            {'2d', 'size', [self.BlockSize, self.NumBlocks]}...
+            );
+        
+        [BlockSizeIn, numBlocksIn] = size(signalBlocks);
+        
+        if numBlocksIn < self.NumBlocks || BlockSizeIn < self.BlockSize,
             error(['Use this function only with data retrievend from ',...
                 'this class. Block length and/or number of data blocks ',...
                 'does not correspond to the class'' properties!']);
         end
         
-        signalBlocks = diag(sparse(self.WindowFunction(self.Blocklength))) * signalBlocks;
+        windowFunction = self.WindowFunction(self.BlockSize);
         
-        blockIndices = 1:self.Blocklength;
+        % Apply synthesis window.
+        signalBlocks = diag(sparse(windowFunction)) * signalBlocks;
         
+        % Initialize block indices.
+        blockIndices = 1:self.BlockSize;
+        
+        % Begin WOLA by adding overlapping weighted blocks.
         signalOut = zeros(self.LengthPaddedSignal,1);
         for iFrame = 1:self.NumBlocks,
             signalOut(blockIndices) = ...
                 signalOut(blockIndices) + signalBlocks(:,iFrame);
             
-            blockIndices = blockIndices + self.Frameshift;
+            % Increment block indices.
+            blockIndices = blockIndices + self.FrameShift;
         end
         
+        normFactor = self.FrameShift / norm(windowFunction)^2;
+        
+        signalOut = normFactor * signalOut;
+        
+        % Limit the signal length to the original length if zero padding
+        % was applied.
         signalOut = signalOut(1:self.SignalDimensions(1));
     end
     
@@ -221,24 +295,24 @@ methods
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%% Setter / Getter %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    function bl = get.Blocklength(self)
-        bl = round(self.BlocklengthSec * self.Fs);
+    function bl = get.BlockSize(self)
+        bl = round(self.BlockLengthSec * self.SampleRate);
     end
     
     function ol = get.Overlap(self)
-        ol = round(self.Blocklength * self.OverlapRatio);
+        ol = round(self.BlockSize * self.OverlapRatio);
     end
     
-    function fs = get.Frameshift(self)
-        fs = self.Blocklength - self.Overlap;
+    function SampleRate = get.FrameShift(self)
+        SampleRate = self.BlockSize - self.Overlap;
     end
 
     function nb = get.NumBlocks(self)
-        nb = max(1,ceil((self.SignalDimensions(1) - self.Overlap) / self.Frameshift));
+        nb = max(1,ceil((self.SignalDimensions(1) - self.Overlap) / self.FrameShift));
     end
 
     function len = get.LengthPaddedSignal(self)
-        len = self.NumBlocks * self.Frameshift + self.Overlap;
+        len = self.NumBlocks * self.FrameShift + self.Overlap;
     end
     
     function rs = get.RemainingSamples(self)
@@ -248,16 +322,20 @@ methods
 
     
     
-    function [] = set.BlocklengthSec(self, BlocklengthIn)
-        validateattributes(BlocklengthIn, {'numeric'}, ...
+    function [] = set.BlockLengthSec(self, BlockSizeIn)
+        validateattributes(BlockSizeIn, {'numeric'}, ...
             {'nonzero', 'nonnegative', '<=', self.SignalDimensions(1)}); %#ok<MCSUP>
         
-        self.BlocklengthSec = BlocklengthIn;
+        self.BlockLengthSec = BlockSizeIn;
         initiateBlockIndex(self);
     end
     
     function [] = set.OverlapRatio(self, overlapIn)
-        validateattributes(overlapIn, {'numeric'}, {'nonnegative', '<', 1});
+        validateattributes(...
+            overlapIn, ...
+            {'numeric'}, ...
+            {'scalar', 'nonnegative', '<', 1}...
+            );
         
         self.OverlapRatio = overlapIn;
     end
@@ -275,22 +353,26 @@ end
 
 
 
-methods (Access = private)    
+methods (Access = private)
     function [] = initiateBlockIndex(self)
-        self.ThisBlock = 1 : self.Blocklength;
+        % Sets block indices to the first block
+        
+        self.ThisBlock = 1 : self.BlockSize;
     end
     
-    function [vData] = cutIntoBlocks(self,vBlockIdx)
-        vData = self.Signal(vBlockIdx,:);
+    function [data] = DecomposeIntoBlocks(self, blockIdx)
+        % Function to extract blocks from a signal vector/matrix
+        
+        data = self.Signal(blockIdx, :);
     end
     
-    function [vData] = readFromAudioFile(self,vBlockIdx)
-        vData = audioread(self.Filename,[vBlockIdx(1), vBlockIdx(end)]);
+    function [data] = readFromAudioFile(self, blockIdx)
+        % Function to extract blocks from an audio file
+        
+        data = audioread(self.Filename, [blockIdx(1), blockIdx(end)]);
     end
 end
 
-
-    
 end
 
 
@@ -302,7 +384,7 @@ end
 % Institute for Hearing Technology and Audiology
 % Jade University of Applied Sciences
 % All rights reserved.
-% 
+%
 % Redistribution and use in source and binary forms, with or without
 % modification, are permitted provided that the following conditions are
 % met:
@@ -316,7 +398,7 @@ end
 %       names of its contributors may be used to endorse or promote
 %       products derived from this software without specific prior written
 %       permission.
-% 
+%
 % THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
 % IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
 % THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
