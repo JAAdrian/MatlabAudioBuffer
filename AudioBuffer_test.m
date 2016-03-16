@@ -27,8 +27,8 @@ cAudioBuffer = AudioBuffer(vSignal,fs);
 % cAudioBuffer = AudioBuffer(szFilename);
 
 
-cAudioBuffer.BlocklenSec  = blocklen;
-cAudioBuffer.OverlapRatio = overlap;
+cAudioBuffer.BlocklengthSec = blocklen;
+cAudioBuffer.OverlapRatio   = overlap;
 
 cAudioBuffer.IdxChannels = vIdxChannels;
 
@@ -36,7 +36,7 @@ cAudioBuffer.WindowFunction = hWin;
 % cAudioBuffer.WindowFunction = 'hann';
 
 
-blocklen     = cAudioBuffer.Blocklen;
+blocklen     = cAudioBuffer.Blocklength;
 numBlocks    = cAudioBuffer.NumBlocks;
 mBlockSignal = zeros(blocklen,length(vIdxChannels),numBlocks);
 for aaBlock = 1:numBlocks,
