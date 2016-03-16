@@ -55,7 +55,7 @@ end
 % Test if pulling another block really returns a warning
 testdummy = obj.getBlock();
 
-% Reconstruct the original signal with WOLA
+% Reconstruct the original signal with weighted-overlap-add (WOLA)
 reconstructedSignal = zeros(size(signal,1),length(idxChannels));
 for aaChan = 1:length(idxChannels),
     reconstructedSignal(:,aaChan) = WOLA(obj, squeeze(blockSignal(:,aaChan,:)));

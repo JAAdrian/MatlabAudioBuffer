@@ -281,6 +281,8 @@ methods
             blockIndices = blockIndices + self.FrameShift;
         end
         
+        % For perfect reconstruction the constant-overlap-add (COLA) term
+        % has to be incorporated. Especially useful for overlaps != 0.5
         normFactor = self.FrameShift / norm(windowFunction)^2;
         
         signalOut = normFactor * signalOut;
