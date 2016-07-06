@@ -28,6 +28,7 @@ classdef AudioBuffer < handle
 % Example:
 % =========================================================================
 %   obj = AudioBuffer(signal, sampleRate);
+%   obj.BlockLengthSec = 32e-3;
 %   obj.OverlapRatio = 0.5;
 %   obj.WindowFunction = @(x) hann(x, 'periodic');
 %
