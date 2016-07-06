@@ -1,19 +1,23 @@
-% <purpose of this file>
-% 
+% Script to demonstrate the MATLAB AudioBuffer() class
+%
 % Author :  J.-A. Adrian (JA) <jens-alrik.adrian AT jade-hs.de>
 % Date   :  20-Mar-2015 13:04:55
-% Updated:  <>
+%
 
 clear;
 close all;
 
-szFilename = 'Audio/speech_2chan.wav';
-[signal, sampleRate] = audioread(szFilename);
+load handel;
+
+sampleRate = Fs;
+signal = y(1:round(2*sampleRate), 1);
+
+clear y Fs;
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 blocklenSec  = 30e-3;
-overlapRatio = 0.88;
+overlapRatio = 0.5;
 winfun = @(x) sqrt(hann(x, 'periodic'));
 
 idxChannels = 1;
@@ -21,9 +25,9 @@ idxChannels = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % either call the class constructor with the signal vector and sample rate
-% or with the filename
+% or with a filename
 obj = AudioBuffer(signal, sampleRate);
-% obj = AudioBuffer(szFilename);
+% obj = AudioBuffer(filename);
 
 
 obj.BlockLengthSec = blocklenSec;
@@ -41,13 +45,13 @@ obj.WindowFunction = winfun;
 blocklenSec = obj.BlockSize;
 numBlocks   = obj.NumBlocks;
 blockSignal = zeros(blocklenSec, length(idxChannels), numBlocks);
-for aaBlock = 1:numBlocks,
+for iBlock = 1:numBlocks,
     tic;
-    blockSignal(:,:,aaBlock) = getBlock(obj);
+    blockSignal(:,:,iBlock) = obj.getBlock());
     toc;
     
     figure(10);
-    plot(blockSignal(:,:,aaBlock));
+    plot(blockSignal(:,:,iBlock));
     axis([1 size(blockSignal,1) -1 1]);
     drawnow;
 end
@@ -57,8 +61,8 @@ testdummy = obj.getBlock();
 
 % Reconstruct the original signal with weighted-overlap-add (WOLA)
 reconstructedSignal = zeros(size(signal,1),length(idxChannels));
-for aaChan = 1:length(idxChannels),
-    reconstructedSignal(:,aaChan) = WOLA(obj, squeeze(blockSignal(:,aaChan,:)));
+for iChan = 1:length(idxChannels),
+    reconstructedSignal(:,iChan) = WOLA(obj, squeeze(blockSignal(:,iChan,:)));
 end
     
 figure(11);
@@ -74,7 +78,7 @@ plot([signal(:,idxChannels) reconstructedSignal]);
 % Institute for Hearing Technology and Audiology
 % Jade University of Applied Sciences
 % All rights reserved.
-% 
+%
 % Redistribution and use in source and binary forms, with or without
 % modification, are permitted provided that the following conditions are
 % met:
@@ -88,7 +92,7 @@ plot([signal(:,idxChannels) reconstructedSignal]);
 %       names of its contributors may be used to endorse or promote
 %       products derived from this software without specific prior written
 %       permission.
-% 
+%
 % THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
 % IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
 % THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
