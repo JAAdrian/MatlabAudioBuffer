@@ -147,8 +147,8 @@ methods
     %       obj - AudioBuffer object
     %
 
-        if nargin,
-            if isnumeric(Source),        % 'Source' is a data vector/matrix
+        if nargin
+            if isnumeric(Source)        % 'Source' is a data vector/matrix
                 narginchk(2, 2);
 
                 self.Signal       = Source;
@@ -156,7 +156,7 @@ methods
                 self.SampleRate   = SampleRate;
 
                 self.SignalDimensions = size(self.Signal);
-            elseif ischar(Source),           % 'Source' is a path to a file
+            elseif ischar(Source)           % 'Source' is a path to a file
                 narginchk(1, 1);
 
                 self.Filename     = Source;
@@ -194,7 +194,7 @@ methods
     %
 
         % Stop and warn if the last block is already put out.
-        if self.IsFinished,
+        if self.IsFinished
             warning('The last data block has been returned. No more data left!');
             data = [];
             return;
@@ -207,7 +207,7 @@ methods
         % the number of remaining samples is smaller than the desired block
         % size.
 
-        if self.ThisBlock(end) < self.SignalDimensions(1),
+        if self.ThisBlock(end) < self.SignalDimensions(1)
             data = self.(self.RetrievalFun)(self.ThisBlock);
             data = data(:, self.IdxChannels);
         else
@@ -258,7 +258,7 @@ methods
 
         [BlockSizeIn, numBlocksIn] = size(signalBlocks);
 
-        if numBlocksIn < self.NumBlocks || BlockSizeIn < self.BlockSize,
+        if numBlocksIn < self.NumBlocks || BlockSizeIn < self.BlockSize
             error(['Use this function only with data retrievend from ',...
                 'this class. Block length and/or number of data blocks ',...
                 'does not correspond to the class'' properties!']);
@@ -274,7 +274,7 @@ methods
 
         % Begin WOLA by adding overlapping weighted blocks.
         signalOut = zeros(self.LengthPaddedSignal,1);
-        for iFrame = 1:self.NumBlocks,
+        for iFrame = 1:self.NumBlocks
             signalOut(blockIndices) = ...
                 signalOut(blockIndices) + signalBlocks(:,iFrame);
 
@@ -346,9 +346,9 @@ methods
     function [] = set.WindowFunction(self,WinIn)
         validateattributes(WinIn, {'function_handle', 'char'}, {});
 
-        if isa(WinIn,'function_handle'),
+        if isa(WinIn,'function_handle')
             self.WindowFunction = WinIn;
-        elseif ischar(WinIn),
+        elseif ischar(WinIn)
             self.WindowFunction = str2func(WinIn);
         end
     end

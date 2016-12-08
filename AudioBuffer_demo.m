@@ -45,7 +45,7 @@ obj.WindowFunction = winfun;
 blocklenSec = obj.BlockSize;
 numBlocks   = obj.NumBlocks;
 blockSignal = zeros(blocklenSec, length(idxChannels), numBlocks);
-for iBlock = 1:numBlocks,
+for iBlock = 1:numBlocks
     tic;
     blockSignal(:,:,iBlock) = obj.getBlock());
     toc;
@@ -61,7 +61,7 @@ testdummy = obj.getBlock();
 
 % Reconstruct the original signal with weighted-overlap-add (WOLA)
 reconstructedSignal = zeros(size(signal,1),length(idxChannels));
-for iChan = 1:length(idxChannels),
+for iChan = 1:length(idxChannels)
     reconstructedSignal(:,iChan) = WOLA(obj, squeeze(blockSignal(:,iChan,:)));
 end
     
