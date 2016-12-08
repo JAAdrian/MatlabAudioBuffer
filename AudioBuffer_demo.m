@@ -47,7 +47,7 @@ numBlocks   = obj.NumBlocks;
 blockSignal = zeros(blocklenSec, length(idxChannels), numBlocks);
 for iBlock = 1:numBlocks
     tic;
-    blockSignal(:,:,iBlock) = obj.getBlock());
+    blockSignal(:,:,iBlock) = obj.getBlock();
     toc;
     
     figure(10);
