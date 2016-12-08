@@ -55,8 +55,10 @@ classdef AudioBuffer < handle
 % Date  :  20-Mar-2015 13:04:55
 %
 
-% Version: v0.1 initial release, 20-Mar-2015 (JA)
-%          v1.0 added input checks, improve documentation, 16-Mar-2016 (JA)
+% Version: v0.1   initial release, 20-Mar-2015 (JA)
+%          v1.0   added input checks, improve documentation, 16-Mar-2016
+%                 (JA) 
+%          v1.0.1 fix ugly commas in statements
 
 
 properties (Access = private)
