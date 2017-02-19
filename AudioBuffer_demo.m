@@ -14,8 +14,9 @@ signal = y(1:round(2*sampleRate), 1);
 
 clear y Fs;
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% desired parameters
+
 blocklenSec  = 30e-3;
 overlapRatio = 0.5;
 winfun = @(x) sqrt(hann(x, 'periodic'));
@@ -25,20 +26,21 @@ idxChannels = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % either call the class constructor with the signal vector and sample rate
-% or with a filename
-obj = AudioBuffer(signal, sampleRate);
-% obj = AudioBuffer(filename);
-
-
-obj.BlockLengthSec = blocklenSec;
-obj.OverlapRatio   = overlapRatio;
-
-obj.IdxChannels = idxChannels;
-
-% either pass a function handle or a string of a function as the window
-% function
-obj.WindowFunction = winfun;
-% obj.WindowFunction = 'hamming';
+% or with a filename while setting the sample rate empty
+obj = AudioBuffer(...
+    signal, sampleRate, ...
+    'BlockLengthSec', blocklenSec, ...
+    'OverlapRatio', overlapRatio, ...
+    'IdxChannels', idxChannels, ...
+    'WindowFunction', winfun ...
+    );
+% obj = AudioBuffer( ...
+%     filename, [], ...
+%     'BlockLengthSec', blocklenSec, ...
+%     'OverlapRatio', overlapRatio, ...
+%     'IdxChannels', idxChannels, ...
+%     'WindowFunction', winfun ...
+%     );
 
 
 % do 'block processing'
@@ -47,27 +49,28 @@ numBlocks   = obj.NumBlocks;
 blockSignal = zeros(blocklenSec, length(idxChannels), numBlocks);
 for iBlock = 1:numBlocks
     tic;
-    blockSignal(:,:,iBlock) = obj.getBlock();
+    blockSignal(:,:,iBlock) = obj.step();
     toc;
     
     figure(10);
     plot(blockSignal(:,:,iBlock));
+    grid on;
     axis([1 size(blockSignal,1) -1 1]);
     drawnow;
 end
 
 % Test if pulling another block really returns a warning
-testdummy = obj.getBlock();
+testdummy = obj.step();
 
 % Reconstruct the original signal with weighted-overlap-add (WOLA)
-reconstructedSignal = zeros(size(signal,1),length(idxChannels));
+reconstructedSignal = zeros(size(signal,1), length(idxChannels));
 for iChan = 1:length(idxChannels)
-    reconstructedSignal(:,iChan) = WOLA(obj, squeeze(blockSignal(:,iChan,:)));
+    reconstructedSignal(:, iChan) = WOLA(obj, squeeze(blockSignal(:, iChan, :)));
 end
     
 figure(11);
 plot([signal(:,idxChannels) reconstructedSignal]);
-
+grid on;
 
 
 
