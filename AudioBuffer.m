@@ -61,6 +61,8 @@ classdef AudioBuffer < matlab.System
 %          v1.0.1 fix ugly commas in statements
 %          v2.0   refactor the class inheriting from matlab.System,
 %                 19-Feb-2017 (JA)
+%          v2.0.1 updated README, 19-Feb-2017 (JA)
+% 
 
 
 properties (Access = private)
