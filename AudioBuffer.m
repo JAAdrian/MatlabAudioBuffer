@@ -160,7 +160,9 @@ methods
                 self.SignalDimensions = size(self.Signal);
             elseif ischar(Source)           % 'Source' is a path to a file
                 narginchk(1, 1);
-
+                
+                assert(exist(Source, 'file'), 'Path to audio file does not exist.');
+                
                 self.Filename     = Source;
                 self.RetrievalFun = @(blockIdx) self.readFromAudioFile(blockIdx);
 
