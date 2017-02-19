@@ -1,4 +1,4 @@
-classdef AudioBuffer < handle
+classdef AudioBuffer < matlab.System
 %AUDIOBUFFER Class providing methods for convenient audio block processing
 % -------------------------------------------------------------------------
 % AudioBuffer produces an object providing methods to conveniently work
@@ -102,7 +102,7 @@ properties (SetAccess = private, Dependent)
     BlockSize;
 end
 
-properties
+properties (Nontunable)
 %BlockLengthSec Block Length in Seconds.
 %   Block length in seconds. The default is 30 ms as it is usual in speech
 %   processing.
@@ -135,7 +135,7 @@ end
 
 methods
     % constructor
-    function self = AudioBuffer(Source, SampleRate)
+    function self = AudioBuffer(Source, SampleRate, varargin)
     % Constructor of the AudioBuffer Class.
     %
     % Usage: obj = AudioBuffer(Source, SampleRate)
@@ -151,16 +151,13 @@ methods
 
         if nargin
             if isnumeric(Source)        % 'Source' is a data vector/matrix
-                narginchk(2, 2);
-
                 self.Signal       = Source;
                 self.RetrievalFun = @(blockIdx) self.DecomposeIntoBlocks(blockIdx);
                 self.SampleRate   = SampleRate;
 
                 self.SignalDimensions = size(self.Signal);
-            elseif ischar(Source)           % 'Source' is a path to a file
-                narginchk(1, 1);
                 
+            elseif ischar(Source)           % 'Source' is a path to a file
                 assert(exist(Source, 'file'), 'Path to audio file does not exist.');
                 
                 self.Filename     = Source;
@@ -170,70 +167,17 @@ methods
                 self.SampleRate = stInfo.SampleRate;
 
                 self.SignalDimensions = [stInfo.TotalSamples, stInfo.NumChannels];
+            
             else
                 error(['Source is not recognized!', ...
                     'Pass a signal vector/matrix', ...
                     'or a path to an audio file (e.g. C:/.../audio.wav)']);
             end
         end
-
-        % set block index to 1.
-        initiateBlockIndex(self);
-
-        % initialize the IsFinished flag.
-        self.IsFinished = false;
+        
+        self.setProperties(nargin - 2, varargin{:});
     end
-
-    function [data] = getBlock(self)
-    % Essential method to optain a current block of the audio signal
-    %
-    % Usage: [data] = getBlock(obj)
-    %
-    % Inputs:  ------------------
-    %       obj - AudioBuffer object
-    %
-    % Outputs: ------------------
-    %       data - next signal block with desired size and following
-    %              desired overlap
-    %
-
-        % Stop and warn if the last block is already put out.
-        if self.IsFinished
-            warning('The last data block has been returned. No more data left!');
-            data = [];
-            return;
-        end
-
-
-        % --------------------------------------------------------------- %
-        % Return data depending on whether the source is a signal
-        % vector/matrix or an audio file. Pad the last block with zeros if
-        % the number of remaining samples is smaller than the desired block
-        % size.
-
-        if self.ThisBlock(end) < self.SignalDimensions(1)
-            data = self.(self.RetrievalFun)(self.ThisBlock);
-            data = data(:, self.IdxChannels);
-        else
-            data = self.(self.RetrievalFun)(self.ThisBlock(1):self.SignalDimensions(1));
-            data = [
-                data(:, self.IdxChannels);
-                zeros(self.RemainingSamples, length(self.IdxChannels))
-                ];
-
-            % This was the last block.
-            self.IsFinished = true;
-        end
-
-        % Apply window function to the current data vector/matrix and make
-        % sure the window has the correct dimensions if dealing with number
-        % of channels > 1.
-        data = data .* (self.WindowFunction(self.BlockSize) * ones(1,length(self.IdxChannels)));
-        % --------------------------------------------------------------- %
-
-        % increment the block indices.
-        self.ThisBlock = self.ThisBlock + self.FrameShift;
-    end
+    
 
     function [signalOut] = WOLA(self, signalBlocks)
     % Reconstruct the decomposed signal using the weighted-overlap-add
@@ -358,6 +302,67 @@ methods
     end
 end
 
+
+methods (Access = protected)
+    function [] = setupImpl(self)
+        % set block index to 1.
+        initiateBlockIndex(self);
+
+        % initialize the IsFinished flag.
+        self.IsFinished = false;
+    end
+
+    function [data] = stepImpl(self)
+    % Essential method to optain a current block of the audio signal
+    %
+    % Usage: [data] = getBlock(obj)
+    %
+    % Inputs:  ------------------
+    %       obj - AudioBuffer object
+    %
+    % Outputs: ------------------
+    %       data - next signal block with desired size and following
+    %              desired overlap
+    %
+
+        % Stop and warn if the last block is already put out.
+        if self.IsFinished
+            warning('The last data block has been returned. No more data left!');
+            data = [];
+            return;
+        end
+
+
+        % --------------------------------------------------------------- %
+        % Return data depending on whether the source is a signal
+        % vector/matrix or an audio file. Pad the last block with zeros if
+        % the number of remaining samples is smaller than the desired block
+        % size.
+
+        if self.ThisBlock(end) < self.SignalDimensions(1)
+            data = self.RetrievalFun(self.ThisBlock);
+            data = data(:, self.IdxChannels);
+        else
+            data = self.RetrievalFun(self.ThisBlock(1):self.SignalDimensions(1));
+            data = [
+                data(:, self.IdxChannels);
+                zeros(self.RemainingSamples, length(self.IdxChannels))
+                ];
+
+            % This was the last block.
+            self.IsFinished = true;
+        end
+
+        % Apply window function to the current data vector/matrix and make
+        % sure the window has the correct dimensions if dealing with number
+        % of channels > 1.
+        data = data .* (self.WindowFunction(self.BlockSize) * ones(1,length(self.IdxChannels)));
+        % --------------------------------------------------------------- %
+
+        % increment the block indices.
+        self.ThisBlock = self.ThisBlock + self.FrameShift;
+    end
+end
 
 
 methods (Access = private)

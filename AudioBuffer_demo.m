@@ -25,20 +25,21 @@ idxChannels = 1;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % either call the class constructor with the signal vector and sample rate
-% or with a filename
-obj = AudioBuffer(signal, sampleRate);
-% obj = AudioBuffer(filename);
-
-
-obj.BlockLengthSec = blocklenSec;
-obj.OverlapRatio   = overlapRatio;
-
-obj.IdxChannels = idxChannels;
-
-% either pass a function handle or a string of a function as the window
-% function
-obj.WindowFunction = winfun;
-% obj.WindowFunction = 'hamming';
+% or with a filename while setting the sample rate empty
+obj = AudioBuffer(...
+    signal, sampleRate, ...
+    'BlockLengthSec', blocklenSec, ...
+    'OverlapRatio', overlapRatio, ...
+    'IdxChannels', idxChannels, ...
+    'WindowFunction', winfun ...
+    );
+% obj = AudioBuffer( ...
+%     filename, [], ...
+%     'BlockLengthSec', blocklenSec, ...
+%     'OverlapRatio', overlapRatio, ...
+%     'IdxChannels', idxChannels, ...
+%     'WindowFunction', winfun ...
+%     );
 
 
 % do 'block processing'
@@ -47,7 +48,7 @@ numBlocks   = obj.NumBlocks;
 blockSignal = zeros(blocklenSec, length(idxChannels), numBlocks);
 for iBlock = 1:numBlocks
     tic;
-    blockSignal(:,:,iBlock) = obj.getBlock();
+    blockSignal(:,:,iBlock) = obj.step();
     toc;
     
     figure(10);
@@ -57,7 +58,7 @@ for iBlock = 1:numBlocks
 end
 
 % Test if pulling another block really returns a warning
-testdummy = obj.getBlock();
+testdummy = obj.step();
 
 % Reconstruct the original signal with weighted-overlap-add (WOLA)
 reconstructedSignal = zeros(size(signal,1),length(idxChannels));
