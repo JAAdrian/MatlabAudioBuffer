@@ -14,8 +14,9 @@ signal = y(1:round(2*sampleRate), 1);
 
 clear y Fs;
 
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%% desired parameters
+
 blocklenSec  = 30e-3;
 overlapRatio = 0.5;
 winfun = @(x) sqrt(hann(x, 'periodic'));
@@ -53,6 +54,7 @@ for iBlock = 1:numBlocks
     
     figure(10);
     plot(blockSignal(:,:,iBlock));
+    grid on;
     axis([1 size(blockSignal,1) -1 1]);
     drawnow;
 end
@@ -61,14 +63,14 @@ end
 testdummy = obj.step();
 
 % Reconstruct the original signal with weighted-overlap-add (WOLA)
-reconstructedSignal = zeros(size(signal,1),length(idxChannels));
+reconstructedSignal = zeros(size(signal,1), length(idxChannels));
 for iChan = 1:length(idxChannels)
-    reconstructedSignal(:,iChan) = WOLA(obj, squeeze(blockSignal(:,iChan,:)));
+    reconstructedSignal(:, iChan) = WOLA(obj, squeeze(blockSignal(:, iChan, :)));
 end
     
 figure(11);
 plot([signal(:,idxChannels) reconstructedSignal]);
-
+grid on;
 
 
 
