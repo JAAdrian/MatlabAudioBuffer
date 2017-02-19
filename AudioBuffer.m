@@ -154,7 +154,7 @@ methods
                 narginchk(2, 2);
 
                 self.Signal       = Source;
-                self.RetrievalFun = 'DecomposeIntoBlocks';
+                self.RetrievalFun = @(blockIdx) self.DecomposeIntoBlocks(blockIdx);
                 self.SampleRate   = SampleRate;
 
                 self.SignalDimensions = size(self.Signal);
@@ -162,7 +162,7 @@ methods
                 narginchk(1, 1);
 
                 self.Filename     = Source;
-                self.RetrievalFun = 'readFromAudioFile';
+                self.RetrievalFun = @(blockIdx) self.readFromAudioFile(blockIdx);
 
                 stInfo          = audioinfo(self.Filename);
                 self.SampleRate = stInfo.SampleRate;
