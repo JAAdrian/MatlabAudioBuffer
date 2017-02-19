@@ -1,14 +1,14 @@
 MatlabAudioBuffer
 ==============================
 
-This class aims at providing a convenient interface for working with block-wise (audio) signals. It can be used with single or multi-channel signals and handles audio files and signal vectors/matrices.
+This class aims at providing a convenient interface for working with block-wise (audio) signals. It can be used with single or multi-channel signals and handles audio files and signal vectors/matrices. It inherits from `matlab.System` and can thus be used as a SIMULINK model.
 
 Dependencies
 -------------------------------
 
 No dependencies to toolboxes.
 
-The code has been tested with MATLAB R2015a/15b/16a on Windows 7 and Xubuntu 15.10 and 16.04 LTS.
+The code has been tested with MATLAB R2015a/15b/16a/16b on Windows 7 and Xubuntu 15.10 and 16.04 LTS.
 
 
 Installation
@@ -24,14 +24,22 @@ The usage of the class is straight forward. The user can specify a signal vector
 The following example shows a typical usage of the class.
 
 ```matlab
-obj = AudioBuffer(signal, sampleRate);
+obj = AudioBuffer(...
+    signal, sampleRate, ...
+    'BlockLengthSec', 32e-3, ...
+    'OverlapRatio', 0.5, ...
+    'IdxChannels', 1, ...
+    'WindowFunction', @(x) hann(x, 'periodic') ...
+    );
+    
 % or:
-% obj = AudioBuffer(filename);
-
-
-obj.BlockLengthSec = 32e-3;
-obj.OverlapRatio = 0.5;
-obj.WindowFunction = @(x) hann(x, 'periodic');
+% obj = AudioBuffer( ...
+%     filename, [], ...
+%     'BlockLengthSec', 32e-3, ...
+%     'OverlapRatio', 0.5, ...
+%     'IdxChannels', 1, ...
+%     'WindowFunction', @(x) hann(x, 'periodic') ...
+%     );
 
 numBlocks = obj.NumBlocks;
 blockSize = obj.BlockSize;
@@ -39,7 +47,7 @@ blockSize = obj.BlockSize;
 signalBlocks = zeros(blockSize, numBlocks);
 for iBlock = 1:numBlocks
     % iteratively return one signal block
-    signalBlocks(:, iBlock) = obj.getBlock;
+    signalBlocks(:, iBlock) = obj.step();
 end
 
 % If desired, use the internal WOLA method to
