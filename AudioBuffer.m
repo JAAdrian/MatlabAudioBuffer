@@ -51,7 +51,7 @@ classdef AudioBuffer < matlab.System
 %
 % See also: STR2FUNC, AUDIOREAD, AUDIOINFO
 %
-% Author:  J.-A. Adrian (JA) <jens-alrik.adrian AT jade-hs.de>
+% Author:  J.-A. Adrian (JA) <jensalrik.adrian AT gmail.com>
 % Date  :  20-Mar-2015 13:04:55
 %
 

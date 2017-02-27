@@ -1,6 +1,6 @@
 % Script to demonstrate the MATLAB AudioBuffer() class
 %
-% Author :  J.-A. Adrian (JA) <jens-alrik.adrian AT jade-hs.de>
+% Author :  J.-A. Adrian (JA) <jensalrik.adrian AT gmail.com>
 % Date   :  20-Mar-2015 13:04:55
 %
 
