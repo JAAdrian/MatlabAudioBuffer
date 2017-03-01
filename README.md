@@ -1,7 +1,7 @@
 MatlabAudioBuffer
 ==============================
 
-This class aims at providing a convenient interface for working with block-wise (audio) signals. It can be used with single or multi-channel signals and handles audio files and signal vectors/matrices. It inherits from `matlab.System` and can thus be used as a SIMULINK model.
+This class aims at providing a convenient interface for working with block-wise (audio) signals. It can be used with single or multi-channel signals and handles audio files and signal vectors/matrices. It inherits from `matlab.System` and will, in a future release, be usable as a SIMULINK model. At the moment, some infos are missing to be included in SIMULINK.
 
 Dependencies
 -------------------------------
