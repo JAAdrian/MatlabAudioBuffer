@@ -62,6 +62,7 @@ classdef AudioBuffer < matlab.System
 %          v2.0   refactor the class inheriting from matlab.System,
 %                 19-Feb-2017 (JA)
 %          v2.0.1 updated README, 19-Feb-2017 (JA)
+%          v2.0.2 changed affiliation, 01-Mar-2017 (JA)
 % 
 
 
