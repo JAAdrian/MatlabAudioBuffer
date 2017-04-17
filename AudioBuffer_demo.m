@@ -7,7 +7,7 @@
 clear;
 close all;
 
-load handel;
+load laughter;
 
 sampleRate = Fs;
 signal = y(1:round(2*sampleRate), 1);
@@ -15,7 +15,7 @@ signal = y(1:round(2*sampleRate), 1);
 clear y Fs;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%%% desired parameters
+%% Desired Parameters
 
 blocklenSec  = 30e-3;
 overlapRatio = 0.5;
@@ -23,8 +23,9 @@ winfun = @(x) sqrt(hann(x, 'periodic'));
 
 idxChannels = 1;
 % idxChannels = [1 2];
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Instantiate Object
 % either call the class constructor with the signal vector and sample rate
 % or with a filename while setting the sample rate empty
 obj = AudioBuffer(...
@@ -43,7 +44,7 @@ obj = AudioBuffer(...
 %     );
 
 
-% do 'block processing'
+%% Do 'Block Processing'
 blocklenSec = obj.BlockSize;
 numBlocks   = obj.NumBlocks;
 blockSignal = zeros(blocklenSec, length(idxChannels), numBlocks);
