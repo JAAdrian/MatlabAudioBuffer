@@ -21,32 +21,35 @@ classdef AudioBuffer < matlab.System
 %   IdxChannels      - Chosen Signal Channels
 %
 % AudioBuffer Methods:
-%    getBlock - get a current block of audio data
+%    step - get a current block of audio data
 %    WOLA - reconstruct the original signal via WOLA method
 %
 %
 % Example:
 % =========================================================================
-%   obj = AudioBuffer(signal, sampleRate);
-%   obj.BlockLengthSec = 32e-3;
-%   obj.OverlapRatio = 0.5;
-%   obj.WindowFunction = @(x) hann(x, 'periodic');
-%
+%   obj = AudioBuffer(...
+%       signal, ...
+%       sampleRate, ...
+%       'BlockLengthSec', 32e-3, ...
+%       'OverlapRatio', 0.5, ...
+%       'WindowFunction', @(x) sqrt(hann(x, 'periodic')) ...
+%       );
+% 
 %   numBlocks = obj.NumBlocks;
 %   blockSize = obj.BlockSize;
-%
+% 
 %   signalBlocks = zeros(blockSize, numBlocks);
 %   for iBlock = 1:numBlocks
-%       signalBlocks(:, iBlock) = obj.getBlock;
+%       signalBlocks(:, iBlock) = obj.step();
 %   end
-%
+% 
 %   reconstructedSignal = obj.WOLA(signalBlocks);
-%
-%   norm(signal - reconstructedSignal)^2
-%
+% 
+%   norm(signal(blockSize+1:end-blockSize) - reconstructedSignal(blockSize+1:end-blockSize))^2
+% 
 %   ans =
-%
-%     0.0021
+% 
+%     2.4582e-29
 % =========================================================================
 %
 % See also: STR2FUNC, AUDIOREAD, AUDIOINFO
@@ -57,13 +60,14 @@ classdef AudioBuffer < matlab.System
 
 % Version: v0.1   initial release, 20-Mar-2015 (JA)
 %          v1.0   added input checks, improve documentation, 16-Mar-2016
-%                 (JA) 
+%                 (JA)
 %          v1.0.1 fix ugly commas in statements
 %          v2.0   refactor the class inheriting from matlab.System,
 %                 19-Feb-2017 (JA)
 %          v2.0.1 updated README, 19-Feb-2017 (JA)
 %          v2.0.2 changed affiliation, 01-Mar-2017 (JA)
-% 
+%          v2.0.3 update documentation, 17-Apr-2017 (JA)
+%
 
 
 properties (Access = private)
