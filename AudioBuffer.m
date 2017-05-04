@@ -34,21 +34,21 @@ classdef AudioBuffer < matlab.System
 %       'OverlapRatio', 0.5, ...
 %       'WindowFunction', @(x) sqrt(hann(x, 'periodic')) ...
 %       );
-% 
+%
 %   numBlocks = obj.NumBlocks;
 %   blockSize = obj.BlockSize;
-% 
+%
 %   signalBlocks = zeros(blockSize, numBlocks);
 %   for iBlock = 1:numBlocks
 %       signalBlocks(:, iBlock) = obj.step();
 %   end
-% 
+%
 %   reconstructedSignal = obj.WOLA(signalBlocks);
-% 
+%
 %   norm(signal(blockSize+1:end-blockSize) - reconstructedSignal(blockSize+1:end-blockSize))^2
-% 
+%
 %   ans =
-% 
+%
 %     2.4582e-29
 % =========================================================================
 %
@@ -403,4 +403,4 @@ end
 
 
 
-% End of file: AudioBufferClass.m
+% End of file: AudioBuffer.m
